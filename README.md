@@ -1,5 +1,5 @@
 # Satellite Imagery Monitor
-Automated monitoring of satellite imagery in this location
+Automated monitoring of satellite imagery in this Pluribus filming site.
 
 ## Latest Update: 2025-12-31 20:43:42 UTC
 
