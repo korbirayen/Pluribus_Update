@@ -29,17 +29,45 @@ jobs:
         env:
           LATITUDE: ${{ secrets.LATITUDE }}
           LONGITUDE: ${{ secrets.LONGITUDE }}
-          ZOOM_LEVEL: '18'  # Lower zoom = wider view
-          TILES_ACROSS: '3'  # 3x3 grid = 768x768 pixels (increase to 5 for 1280x1280)
+          ZOOM_LEVEL: '18'
+          TILES_ACROSS: '3'
         run: python check_imagery.py
+      
+      - name: Update README with new image
+        if: steps.check.outputs.should_commit == 'true'
+        run: |
+          NEW_IMAGE=$(ls -t imagery_*.jpg | head -n 1)
+          TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          
+          # Read old README content (everything after line 3)
+          tail -n +4 README.md > old_content.txt 2>/dev/null || echo "" > old_content.txt
+          
+          # Create new README
+          cat > README.md << EOF
+          # Satellite Imagery Monitor
+          Automated monitoring of satellite imagery in this location
+          
+          ## Latest Update: ${TIMESTAMP}
+          
+          ![Latest Imagery](${NEW_IMAGE})
+          
+          ---
+          
+          ## Previous Updates
+          
+          EOF
+          
+          # Append old content
+          cat old_content.txt >> README.md
+          rm old_content.txt
       
       - name: Commit new imagery (only if changed)
         if: steps.check.outputs.should_commit == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add last_image.txt imagery_*.jpg
-          git commit -m "🛰️ New imagery detected - $(date +'%Y-%m-%d %H:%M:%S UTC')"
+          git add README.md imagery_*.jpg last_image.txt
+          git commit -m "🛰️ New imagery detected - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           git push
       
       - name: Log no changes
