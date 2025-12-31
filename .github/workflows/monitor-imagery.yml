@@ -1,0 +1,64 @@
+name: Monitor Satellite Imagery
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly on Monday at 00:00 UTC
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  check-imagery:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install requests Pillow imagehash
+      
+      - name: Check for imagery updates
+        id: check
+        env:
+          LATITUDE: ${{ secrets.LATITUDE }}
+          LONGITUDE: ${{ secrets.LONGITUDE }}
+          ZOOM_LEVEL: '18'
+        run: python check_imagery.py
+      
+      - name: Commit new imagery (only if changed)
+        if: steps.check.outputs.should_commit == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add last_image.txt imagery_*.jpg
+          git commit -m "🛰️ New imagery detected - $(date +'%Y-%m-%d %H:%M:%S UTC')"
+          git push
+      
+      - name: Log no changes
+        if: steps.check.outputs.should_commit == 'false'
+        run: echo "✓ No changes detected - skipping commit to save repo space"
+      
+      - name: Send notification if changed
+        if: steps.check.outputs.changed == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: '🛰️ New Satellite Imagery Available!'
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: ${{ secrets.EMAIL_USERNAME }}
+          body: |
+            New satellite imagery has been detected for your monitored location!
+            
+            📍 Location: 35°09'55.3"N 106°44'46.4"W (New Mexico)
+            🕐 Detection time: ${{ github.event.repository.updated_at }}
+            
+            View the repository to see the new imagery:
+            ${{ github.server_url }}/${{ github.repository }}
