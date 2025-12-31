@@ -2,14 +2,14 @@ name: Monitor Satellite Imagery
 
 on:
   schedule:
-    - cron: '0 0 * * 1'  # Weekly on Monday at 00:00 UTC
-  workflow_dispatch:  # Allows manual trigger
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
 
 jobs:
   check-imagery:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required to push commits
+      contents: write
     
     steps:
       - name: Checkout repository
@@ -38,17 +38,12 @@ jobs:
         run: |
           NEW_IMAGE=$(ls -t imagery_*.jpg | head -n 1)
           TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
-          
-          # Read old README content (everything after line 3)
           tail -n +4 README.md > old_content.txt 2>/dev/null || echo "" > old_content.txt
-          
-          # Create new README
           cat > README.md << 'EOFMARKER'
-# Satellite Imagery Monitor
-Automated monitoring of satellite imagery in this location
-
-EOFMARKER
+          # Satellite Imagery Monitor
+          Automated monitoring of satellite imagery in this location
           
+          EOFMARKER
           echo "## Latest Update: ${TIMESTAMP}" >> README.md
           echo "" >> README.md
           echo "![Latest Imagery](${NEW_IMAGE})" >> README.md
@@ -57,12 +52,10 @@ EOFMARKER
           echo "" >> README.md
           echo "## Previous Updates" >> README.md
           echo "" >> README.md
-          
-          # Append old content
           cat old_content.txt >> README.md
           rm old_content.txt
       
-      - name: Commit new imagery (only if changed)
+      - name: Commit new imagery
         if: steps.check.outputs.should_commit == 'true'
         run: |
           git config --local user.email "action@github.com"
@@ -73,7 +66,7 @@ EOFMARKER
       
       - name: Log no changes
         if: steps.check.outputs.should_commit == 'false'
-        run: echo "✓ No changes detected - skipping commit to save repo space"
+        run: echo "✓ No changes detected - skipping commit"
       
       - name: Send notification if changed
         if: steps.check.outputs.changed == 'true'
@@ -87,10 +80,6 @@ EOFMARKER
           to: ${{ secrets.NOTIFICATION_EMAIL }}
           from: ${{ secrets.EMAIL_USERNAME }}
           body: |
-            New satellite imagery has been detected for your monitored location!
-            
-            📍 Location: 35°09'55.3"N 106°44'46.4"W (New Mexico)
-            🕐 Detection time: ${{ github.event.repository.updated_at }}
-            
-            View the repository to see the new imagery:
-            ${{ github.server_url }}/${{ github.repository }}
+            New satellite imagery detected!
+            Location: 35°09'55.3"N 106°44'46.4"W
+            View: ${{ github.server_url }}/${{ github.repository }}
