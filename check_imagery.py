@@ -14,25 +14,56 @@ def deg2tile(lat, lon, zoom):
     y = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
     return (x, y)
 
+def download_tile(zoom, x, y):
+    """Download a single tile from Esri"""
+    url = f"https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{zoom}/{y}/{x}"
+    try:
+        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+        response.raise_for_status()
+        return Image.open(BytesIO(response.content))
+    except Exception as e:
+        print(f"⚠️ Failed to download tile {x},{y}: {e}")
+        return None
+
+def stitch_tiles(lat, lon, zoom, tiles_across=3):
+    """Download and stitch multiple tiles together for higher resolution"""
+    center_x, center_y = deg2tile(lat, lon, zoom)
+    half = tiles_across // 2
+    
+    # Create blank canvas (each tile is 256x256)
+    tile_size = 256
+    stitched = Image.new('RGB', (tiles_across * tile_size, tiles_across * tile_size))
+    
+    print(f"📥 Downloading {tiles_across}x{tiles_across} tile grid...")
+    
+    for dx in range(-half, half + 1):
+        for dy in range(-half, half + 1):
+            x = center_x + dx
+            y = center_y + dy
+            
+            img = download_tile(zoom, x, y)
+            if img:
+                paste_x = (dx + half) * tile_size
+                paste_y = (dy + half) * tile_size
+                stitched.paste(img, (paste_x, paste_y))
+                print(f"  ✓ Tile ({x},{y}) downloaded")
+            else:
+                print(f"  ✗ Tile ({x},{y}) failed")
+    
+    return stitched
+
 # Configuration
 LAT = float(os.environ['LATITUDE'])
 LON = float(os.environ['LONGITUDE'])
-ZOOM = int(os.environ.get('ZOOM_LEVEL', '18'))
-
-# Get tile coordinates
-x, y = deg2tile(LAT, LON, ZOOM)
-
-# Esri World Imagery tile URL - NO API KEY NEEDED
-url = f"https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{ZOOM}/{y}/{x}"
+ZOOM = int(os.environ.get('ZOOM_LEVEL', '17'))  # Lower zoom for wider view
+TILES_ACROSS = int(os.environ.get('TILES_ACROSS', '3'))  # 3x3 grid = 768x768 pixels
 
 print(f"📍 Monitoring location: {LAT}, {LON}")
-print(f"🗺️ Tile coordinates: zoom={ZOOM}, x={x}, y={y}")
-print(f"🔗 URL: {url}")
+print(f"🔍 Zoom level: {ZOOM}")
+print(f"📐 Grid size: {TILES_ACROSS}x{TILES_ACROSS} tiles ({TILES_ACROSS * 256}x{TILES_ACROSS * 256} pixels)")
 
-# Download current image
-response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
-response.raise_for_status()
-current_image = Image.open(BytesIO(response.content))
+# Download and stitch tiles
+current_image = stitch_tiles(LAT, LON, ZOOM, TILES_ACROSS)
 
 # Calculate hash of current image
 current_hash = imagehash.average_hash(current_image)
@@ -54,7 +85,7 @@ if os.path.exists(hash_file):
         
         # Save with timestamp for historical tracking
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-        current_image.save(f'imagery_{timestamp}.jpg')
+        current_image.save(f'imagery_{timestamp}.jpg', quality=95)
         print(f"✅ Saved new imagery as imagery_{timestamp}.jpg")
     else:
         print(f"✓ No change detected. Hash: {current_hash}")
@@ -64,7 +95,7 @@ else:
     print(f"📸 First run. Storing initial hash: {current_hash}")
     should_save = True
     timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-    current_image.save(f'imagery_{timestamp}.jpg')
+    current_image.save(f'imagery_{timestamp}.jpg', quality=95)
     print(f"✅ Saved initial imagery as imagery_{timestamp}.jpg")
 
 # Update hash file only if there was a change or first run
