@@ -29,8 +29,8 @@ jobs:
         env:
           LATITUDE: ${{ secrets.LATITUDE }}
           LONGITUDE: ${{ secrets.LONGITUDE }}
-          ZOOM_LEVEL: '17'  # Lower zoom = wider view
-          TILES_ACROSS: '5'  # 3x3 grid = 768x768 pixels (increase to 5 for 1280x1280)
+          ZOOM_LEVEL: '18'  # Lower zoom = wider view
+          TILES_ACROSS: '3'  # 3x3 grid = 768x768 pixels (increase to 5 for 1280x1280)
         run: python check_imagery.py
       
       - name: Commit new imagery (only if changed)
