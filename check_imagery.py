@@ -55,8 +55,8 @@ def stitch_tiles(lat, lon, zoom, tiles_across=3):
 # Configuration
 LAT = float(os.environ['LATITUDE'])
 LON = float(os.environ['LONGITUDE'])
-ZOOM = int(os.environ.get('ZOOM_LEVEL', '17'))  # Lower zoom for wider view
-TILES_ACROSS = int(os.environ.get('TILES_ACROSS', '3'))  # 3x3 grid = 768x768 pixels
+ZOOM = int(os.environ.get('ZOOM_LEVEL', '17'))
+TILES_ACROSS = int(os.environ.get('TILES_ACROSS', '3'))
 
 print(f"📍 Monitoring location: {LAT}, {LON}")
 print(f"🔍 Zoom level: {ZOOM}")

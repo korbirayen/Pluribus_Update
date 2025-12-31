@@ -43,19 +43,20 @@ jobs:
           tail -n +4 README.md > old_content.txt 2>/dev/null || echo "" > old_content.txt
           
           # Create new README
-          cat > README.md << EOF
-          # Satellite Imagery Monitor
-          Automated monitoring of satellite imagery in this location
+          cat > README.md << 'EOFMARKER'
+# Satellite Imagery Monitor
+Automated monitoring of satellite imagery in this location
+
+EOFMARKER
           
-          ## Latest Update: ${TIMESTAMP}
-          
-          ![Latest Imagery](${NEW_IMAGE})
-          
-          ---
-          
-          ## Previous Updates
-          
-          EOF
+          echo "## Latest Update: ${TIMESTAMP}" >> README.md
+          echo "" >> README.md
+          echo "![Latest Imagery](${NEW_IMAGE})" >> README.md
+          echo "" >> README.md
+          echo "---" >> README.md
+          echo "" >> README.md
+          echo "## Previous Updates" >> README.md
+          echo "" >> README.md
           
           # Append old content
           cat old_content.txt >> README.md

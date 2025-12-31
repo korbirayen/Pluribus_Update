@@ -2,5 +2,4 @@ __pycache__/
 *.pyc
 .env
 *.log
-
-
+old_content.txt
