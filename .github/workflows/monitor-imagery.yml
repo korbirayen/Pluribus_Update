@@ -83,3 +83,25 @@ jobs:
             New satellite imagery detected!
             Location: 35°09'55.3"N 106°44'46.4"W
             View: ${{ github.server_url }}/${{ github.repository }}
+
+      # GitHub auto-disables scheduled workflows in repos with no commit
+      # activity for 60 days. This monitor only commits when imagery changes,
+      # so a long "no change" streak would silently get the schedule turned
+      # off. This step pushes an empty keepalive commit as the streak nears
+      # the limit, resetting GitHub's inactivity timer. Runs even if earlier
+      # steps failed, so a bad week can't let the schedule lapse.
+      - name: Keep scheduled workflow alive
+        if: always()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          LAST_COMMIT_EPOCH=$(git log -1 --format=%ct)
+          AGE_DAYS=$(( ( $(date -u +%s) - LAST_COMMIT_EPOCH ) / 86400 ))
+          echo "Days since last commit: ${AGE_DAYS}"
+          if [ "${AGE_DAYS}" -ge 45 ]; then
+            echo "Approaching GitHub's 60-day inactivity limit — pushing keepalive commit."
+            git commit --allow-empty -m "⏰ Keepalive: keep scheduled workflow enabled ($(date -u +'%Y-%m-%d'))"
+            git push
+          else
+            echo "Repository active enough (${AGE_DAYS}d) — no keepalive commit needed."
+          fi
