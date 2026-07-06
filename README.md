@@ -5,9 +5,9 @@ Location: **35°09'55.3"N 106°44'46.4"W**
 
 ## Newest change vs. previous
 
-| 🆕 Newest — 2025-12-31 20:43:42 UTC | 🕒 Previous — 2025-12-31 20:27:03 UTC |
+| 🆕 Newest — 2026-07-06 19:24:26 UTC | 🕒 Previous — 2025-12-31 20:43:42 UTC |
 |:---:|:---:|
-| ![Newest](imagery_20251231_204342.jpg) | ![Previous](imagery_20251231_202703.jpg) |
+| ![Newest](imagery_20260706_192426.jpg) | ![Previous](imagery_20251231_204342.jpg) |
 
 ---
 
@@ -16,6 +16,7 @@ Location: **35°09'55.3"N 106°44'46.4"W**
 <details>
 <summary>All captures (newest first)</summary>
 
+- **2026-07-06 19:24:26 UTC** — [`imagery_20260706_192426.jpg`](imagery_20260706_192426.jpg)
 - **2025-12-31 20:43:42 UTC** — [`imagery_20251231_204342.jpg`](imagery_20251231_204342.jpg)
 - **2025-12-31 20:27:03 UTC** — [`imagery_20251231_202703.jpg`](imagery_20251231_202703.jpg)
 - **2025-12-31 20:22:32 UTC** — [`imagery_20251231_202232.jpg`](imagery_20251231_202232.jpg)
