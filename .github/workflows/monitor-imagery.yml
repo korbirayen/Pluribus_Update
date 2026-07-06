@@ -13,10 +13,10 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v5
+
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       
@@ -24,6 +24,10 @@ jobs:
         run: |
           pip install requests Pillow imagehash
       
+      # README generation lives in check_imagery.py now, so the README always
+      # reflects the two most recent captures with their dates. On a manual run
+      # (workflow_dispatch) FORCE_CAPTURE saves a fresh capture even if the
+      # imagery is unchanged, so a manual trigger always produces a visible result.
       - name: Check for imagery updates
         id: check
         env:
@@ -31,30 +35,9 @@ jobs:
           LONGITUDE: ${{ secrets.LONGITUDE }}
           ZOOM_LEVEL: '18'
           TILES_ACROSS: '3'
+          FORCE_CAPTURE: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
         run: python check_imagery.py
-      
-      - name: Update README with new image
-        if: steps.check.outputs.should_commit == 'true'
-        run: |
-          NEW_IMAGE=$(ls -t imagery_*.jpg | head -n 1)
-          TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
-          tail -n +4 README.md > old_content.txt 2>/dev/null || echo "" > old_content.txt
-          cat > README.md << 'EOFMARKER'
-          # Satellite Imagery Monitor
-          Automated monitoring of satellite imagery in this location
-          
-          EOFMARKER
-          echo "## Latest Update: ${TIMESTAMP}" >> README.md
-          echo "" >> README.md
-          echo "![Latest Imagery](${NEW_IMAGE})" >> README.md
-          echo "" >> README.md
-          echo "---" >> README.md
-          echo "" >> README.md
-          echo "## Previous Updates" >> README.md
-          echo "" >> README.md
-          cat old_content.txt >> README.md
-          rm old_content.txt
-      
+
       - name: Commit new imagery
         if: steps.check.outputs.should_commit == 'true'
         run: |
